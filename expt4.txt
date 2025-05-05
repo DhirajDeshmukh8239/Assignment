@@ -1,0 +1,29 @@
+clear;
+N = 1e6;
+EbN0dB = -3:35;
+ip = randi([0 1], 1, N);
+bpsk = 2*ip - 1;
+n = (randn(1,N) + 1i*randn(1,N)) / sqrt(2);
+
+for i = 1:length(EbN0dB)
+    snr = 10^(-EbN0dB(i)/20);
+    
+    y1 = bpsk + snr * n;
+    ber_awgn(i) = mean(ip ~= (real(y1) > 0));
+
+    h = (randn(1,N) + 1i*randn(1,N)) / sqrt(2);
+    y2 = h .* bpsk + snr * n;
+    ber_rayleigh(i) = mean(ip ~= (real(y2./h) > 0));
+end
+
+% Theory
+snr_lin = 10.^(EbN0dB/10);
+th_awgn = 0.5 * erfc(sqrt(snr_lin));
+th_ray = 0.5 * (1 - sqrt(snr_lin ./ (1 + snr_lin)));
+
+% Plot
+semilogy(EbN0dB, th_awgn, 'k--', EbN0dB, ber_awgn, 'bo-', ...
+         EbN0dB, th_ray, 'r--', EbN0dB, ber_rayleigh, 'mx-');
+legend('Theory AWGN', 'Sim AWGN', 'Theory Rayleigh', 'Sim Rayleigh');
+xlabel('Eb/N0 (dB)'); ylabel('BER'); title('BPSK in AWGN and Rayleigh');
+grid on; axis([-3 35 1e-5 1]); 
